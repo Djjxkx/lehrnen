@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Wahr/Falsch Quiz</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 40px; }
+    #question { font-size: 1.3em; margin-bottom: 20px; }
+    #progress { margin-bottom: 20px; font-weight: bold; }
+    .btn { padding: 10px 20px; margin: 10px; font-size: 1em; border: none; border-radius: 8px; cursor: pointer; }
+    .true { background-color: #d0f0c0; }
+    .false { background-color: #f4cccc; }
+    .restart { background-color: #f4e0c0; }
+    #feedback { margin: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h1>Wahr/Falsch Quiz</h1>
+  <div id="question"></div>
+  <div id="progress"></div>
+  <button class="btn true" onclick="checkAnswer('Richtig')">Richtig</button>
+  <button class="btn false" onclick="checkAnswer('Falsch')">Falsch</button>
+  <button id="restartBtn" class="btn restart" onclick="restartQuiz()" style="display:none;">Quiz neu starten</button>
+  <div id="feedback"></div>
+
+  <script>
+    const fragen = [
+        ["Ein strategisches System ist ein betriebliches Anwendungssystem, das die täglichen, für den Geschäftsbetrieb notwendigen Routinetransaktionen ausführt und aufzeichnet.", false],
+        ["Wir haben verschiedene Arten des Maschinellen Lernens kennengelernt. Die Methoden der Klassifikation sowie der Regression lassen sich dem Unüberwachten Lernen zuordnen.", false],
+        ["Bei einem Ransomware-Angriff handelt es sich um die mutwillige Überlastung eines Dienstes. Dies kann z.B. die Webseite eines Onlineshops sein.", false],
+        ["JSON steht für JavaScript Object Notation und ist eine Sprache, die zur Darstellung strukturierter Daten verwendet wird.", true],
+        ["Ereignisgesteuerte Prozessketten dienen zur Modellierung von zeitlichen und sachlogischen Abhängigkeiten zwischen Aktivitäten und Ereignissen.", true],
+        ["Ein Data Lake wird zur Speicherung von Daten in festgelegten Datenformaten verwendet.", false],
+        ["Der BPMN 2.0-Standard enthält eine XML-Notation, die den plattformunabhängigen Austausch von BPMN 2.0-Diagrammen ermöglicht.", true],
+        ["Integration bezeichnet in der Wirtschaftsinformatik, die Verknüpfung von Menschen, Aufgaben und Technik zu einem einheitlichen Ganzen.", true],
+        ["Lernt ein Algorithmus des Maschinellen Lernens aus einem Trainigsdatensatz, welcher einen Bias besitzt, so kann dieser zu diskriminierenden Entscheidungen gelangen.", true],
+        ["In der Kryptographie werden Hashfunktionen eingesetzt, um Passwörter zu verschlüsseln.", true],
+        ["Betriebliche Anwendungssysteme sind Systeme, welche alle Programme beinhalten, die als Anwendungssoftware für ein konkretes betriebliches Anwendungsgebiet entwickelt, eingeführt und eingesetzt werden.", true],
+        ["Wir haben verschiedene Arten des Maschinellen Lernens kennengelernt. Die Methoden der Segmentierung und des Clustering lassen sich dem Überwachten Lernen zuordnen.", false],
+        ["Bei Zero-Day-Exploits handelt es sich um gefälschte Webseiten, E-Mails oder Kurznachrichten, wodurch besonders zum Launch einer Applikation versucht wird, an Benutzerdaten und Kreditkarteninformationen zu gelangen.", false],
+        ["XML steht für Extensible Markup Language und ist ein sehr kompaktes Dateiformat, welches hauptsächlich für den Datenaustausch zwischen REST-Webservices verwendet wird.", false],
+        ["BPMN-Modelle dienen zur Modellierung von zeitlichen und sachlogischen Abhängigkeiten zwischen Aktivitäten und Ereignissen, während EPKs auf die Modellierung von Geschäftsprozessen ausgerichtet sind.", false],
+        ["Der Statuscode 404 bedeutet, dass ein Webservice erfolgreich Daten empfangen konnte.", false],
+        ["Das Akronym CRUD umfasst die Operationen: Create, Read, Update und Delete.", true],
+        ["Informationen lassen sich aus Daten ableiten und sind abhängig vom Wissensstand eines Anwenders.", true],
+        ["Ein Algorithmus, welcher mit Methoden des Überwachten Lernens arbeitet, gelangt auch ohne Trainingsdaten zu guten Ergebnissen.", false],
+        ["IT-Sicherheit ist kein Prozess, sondern ein Zustand.", false],
+        ["Der Begriff Industrie 4.0 bezieht sich auf die Einführung des Internets und die damit verbundene Erhöhung der Produktivität durch E-Mail-Verkehr und Online-Handel.", false],
+        ["Die Trainingsverfahren des Maschinelle Lernen lassen sich in drei Verfahren unterteilen. Das Überwachte Lernen, das Unüberwachte Lernen und das Optimierende Lernen.", false],
+        ["Beim Phishing handelt es sich um eine Methode um sich über gefälschte Webseiten oder E-Mails als vertrauenswürdiger Kommunikationspartner auszugeben. Das Ziel hinter der Methode ist der Diebstahl von Passwörtern und Daten.", true],
+        ["JSON steht für JavaScript Object Notation und ist ein Dateiformat, welches Daten in einer baumartigen Struktur mit verschachtelten Tags abspeichert. Das Format ist gut Menschen- und maschinenlesbar.", false],
+        ["Einem jeden BPMN-Modell liegt eine YAML-Datei zugrunde. Dies bedeutet, dass sich BPMN-Modelle in Form einer YAML-Datei darstellen lassen können.", false],
+        ["Falls die Validierungsstelle bei einer Public-Key-Infrastruktur kompromittiert wurde, sind keine Zertifikate, welche sich derzeit im Umlauf befinden, mehr gültig.", false],
+        ["Typische HTTP-Verben sind: GET, PUT, PATCH, POST, DELETE.", true],
+        ["Webservices sind Softwareanwendungen, die über das Internet kommunizieren und Daten austauschen können. Sie ermöglichen die Interaktion zwischen verschiedenen Systemen, unabhängig von deren zugrundeliegender Technologie.", true],
+        ["Ein Data Mart ist eine zentrale Datenbank, die Daten aus verschiedenen Quellen integriert und zur Analyse und Berichterstellung bereitstellt.", false],
+        ["Sie können JavaScript Programmcode einfach in einem Internetbrowser ausführen.", true]
+    ];
+
+
+    let shuffled;
+    let index;
+    let score;
+
+    const questionEl = document.getElementById("question");
+    const feedbackEl = document.getElementById("feedback");
+    const progressEl = document.getElementById("progress");
+    const restartBtn = document.getElementById("restartBtn");
+
+    function startQuiz() {
+      shuffled = fragen.sort(() => Math.random() - 0.5);
+      index = 0;
+      score = 0;
+      restartBtn.style.display = "none"; // Restart-Button ausblenden
+      document.querySelectorAll(".btn.true, .btn.false").forEach(btn => btn.style.display = "inline-block");
+      showQuestion();
+    }
+
+    function updateProgress() {
+      progressEl.textContent = `Frage ${index + 1} von ${shuffled.length}`;
+    }
+
+    function showQuestion() {
+      if (index < shuffled.length) {
+        questionEl.textContent = shuffled[index][0];
+        feedbackEl.textContent = "";
+        updateProgress();
+      } else {
+        questionEl.textContent = `Fertig! Du hast ${score} von ${shuffled.length} Fragen richtig.`;
+        progressEl.textContent = "";
+        document.querySelectorAll(".btn.true, .btn.false").forEach(btn => btn.style.display = "none");
+        restartBtn.style.display = "inline-block"; // Restart-Button einblenden
+      }
+    }
+
+    function checkAnswer(answer) {
+      const richtigeAntwort = shuffled[index][1];
+      if (answer === (richtigeAntwort ? "Richtig" : "Falsch")) {
+        score++;
+        feedbackEl.textContent = "✅ Richtig!";
+        feedbackEl.style.color = "green";
+      } else {
+        feedbackEl.textContent = "❌ Falsch! Richtige Antwort: " + (richtigeAntwort ? "Richtig" : "Falsch");
+        feedbackEl.style.color = "red";
+      }
+      index++;
+      setTimeout(showQuestion, 1500);
+    }
+
+    function restartQuiz() {
+      startQuiz();
+    }
+
+    startQuiz();
+  </script>
+
+</body>
+</html>
